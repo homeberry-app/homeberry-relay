@@ -68,3 +68,11 @@ Prism's native adapter and fault runner consume this documented protocol without
 Managed Terraform belongs in the separate private `prism-infra` repository. This service has no dependency on AWS or Prism-operated infrastructure.
 
 See [protocol](PROTOCOL.md) and [security and release gates](SECURITY.md).
+
+## Validation
+
+The prepared GitHub workflow runs formatting, locked transport tests and strict
+Clippy on Linux with read-only repository permissions and no deployment credentials.
+It needs only this repository. It has not run on GitHub until the repository is
+published/pushed with explicit owner approval. Run the same commands locally;
+use `cargo audit --deny warnings` separately against the current advisory database.
