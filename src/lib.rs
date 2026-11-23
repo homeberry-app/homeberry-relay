@@ -1,4 +1,7 @@
-use rustls::{ClientConfig, RootCertStore, ServerConfig, pki_types::ServerName};
+use rustls::{
+    ClientConfig, RootCertStore, ServerConfig,
+    pki_types::{CertificateDer, PrivateKeyDer, ServerName, pem::PemObject},
+};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::{
@@ -87,10 +90,8 @@ pub fn read_settings<T: for<'a> Deserialize<'a>>(path: &Path) -> Result<T> {
     Ok(serde_json::from_slice(&std::fs::read(path)?)?)
 }
 pub fn server_tls(cert: &Path, key: &Path) -> Result<Arc<ServerConfig>> {
-    let certs = rustls_pemfile::certs(&mut std::io::BufReader::new(std::fs::File::open(cert)?))
-        .collect::<std::result::Result<Vec<_>, _>>()?;
-    let key = rustls_pemfile::private_key(&mut std::io::BufReader::new(std::fs::File::open(key)?))?
-        .ok_or_else(|| fail("missing TLS key"))?;
+    let certs = CertificateDer::pem_file_iter(cert)?.collect::<std::result::Result<Vec<_>, _>>()?;
+    let key = PrivateKeyDer::from_pem_file(key)?;
     Ok(Arc::new(
         ServerConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
             .with_no_client_auth()
@@ -100,8 +101,7 @@ pub fn server_tls(cert: &Path, key: &Path) -> Result<Arc<ServerConfig>> {
 pub fn client_tls(ca: Option<&str>) -> Result<Arc<ClientConfig>> {
     let mut roots = RootCertStore::empty();
     if let Some(path) = ca {
-        for cert in rustls_pemfile::certs(&mut std::io::BufReader::new(std::fs::File::open(path)?))
-        {
+        for cert in CertificateDer::pem_file_iter(path)? {
             roots.add(cert?)?;
         }
     } else {
