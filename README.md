@@ -1,8 +1,10 @@
-# Prism relay
+# Homeberry Relay
 
-Private experimental Rust transport. Independently buildable with Cargo; no Prism source, accounts, document engine, or private dependencies are required. Publication and license selection are pending review. `publish = false` deliberately prevents Cargo publication.
+Open-source (MIT) standalone Rust transport for **Homeberry**. Independently buildable with Cargo — no Homeberry application source, accounts, document engine, or private dependencies are required.
 
-The relay connects an outbound household connector to an authorized client. Prism runs its existing pinned Hub TLS session inside this stream. The relay terminates the **outer** TLS connection but cannot decrypt that inner session. The household Hub remains responsible for authorization, encrypted storage and durable receipts.
+The relay connects an outbound household **Homeberry Hub** connector to an authorized Homeberry client. Homeberry runs its existing pinned Hub TLS session inside this stream. The relay terminates the **outer** TLS connection but cannot decrypt the inner household session. The household Hub remains responsible for authorization, encrypted storage, and durable receipts.
+
+> **Compatibility note:** The compiled binary and Cargo package retain the `prism-relay` identifier for wire and operational compatibility.
 
 ## Build and verify
 
@@ -13,7 +15,7 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo fmt --check
 ```
 
-Tested on macOS with Rust 1.98. Linux deployment remains to be verified. Tests use disposable certificates and loopback sockets, including route isolation, invalid credentials, certificate validation, reconnect, rotation and bounded resource use.
+Tests use disposable certificates and loopback sockets, covering route isolation, invalid credentials, certificate validation, reconnect, rotation, and bounded resource use.
 
 ## Run
 
@@ -59,20 +61,10 @@ Generate route IDs and each role token separately using a cryptographically secu
 
 `connect` maintains four outbound TLS connections and connects only to its configured loopback TCP target. It needs no inbound household firewall rule. `bridge` is a development client: `local` is its loopback listening address; it uses the client role token. Connect a TLS client with the **original Hub hostname and certificate validation** through that port. Neither operation may target/bind a non-loopback local address. `ca_certificate` optionally supplies trusted PEM roots for self-hosting; hostname and validity checks still apply. Otherwise public WebPKI roots are used.
 
-Deploy behind TCP forwarding, not an HTTP reverse proxy. The process owns outer TLS; a load balancer must preserve TCP bytes. One instance holds all pending routes; multiple replicas require deliberate connection affinity and are not supported by this milestone. Restart to apply route/token changes; existing streams close. Credentials shared by clients are currently rotated as a group.
+Deploy behind TCP forwarding, not an HTTP reverse proxy. The process owns outer TLS; a load balancer must preserve TCP bytes. One instance holds all pending routes; multiple replicas require deliberate connection affinity. Restart to apply route/token changes; existing streams close.
 
-## Integration status
+## Protocol, security & infrastructure boundaries
 
-Prism's native adapter and fault runner consume this documented protocol without importing private source into this repository. Automatic route enrollment, credential distribution, app setup UI, service installation, Linux validation, AWS deployment and physical cellular acceptance remain unfinished. Do not expose the experimental service as a production offering yet.
-
-Managed Terraform belongs in the separate private `prism-infra` repository. This service has no dependency on AWS or Prism-operated infrastructure.
-
-See [protocol](PROTOCOL.md) and [security and release gates](SECURITY.md).
-
-## Validation
-
-The prepared GitHub workflow runs formatting, locked transport tests and strict
-Clippy on Linux with read-only repository permissions and no deployment credentials.
-It needs only this repository. It has not run on GitHub until the repository is
-published/pushed with explicit owner approval. Run the same commands locally;
-use `cargo audit --deny warnings` separately against the current advisory database.
+- Managed Terraform belongs in the separate private [`homeberry-app/homeberry-infra`](https://github.com/homeberry-app/homeberry-infra) repository. This service has no dependency on AWS or Homeberry-operated infrastructure.
+- See [`PROTOCOL.md`](PROTOCOL.md) and [`SECURITY.md`](SECURITY.md).
+- Licensed under the [MIT License](LICENSE).
